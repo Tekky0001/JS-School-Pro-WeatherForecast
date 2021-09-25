@@ -37,6 +37,7 @@
                         lat = data.coord.lat;
                         lon = data.coord.lon;
                         console.log(data);
+                        city = (city == undefined) ? city = 'Phnom Penh' : city = data.name;
                         getForecast();
                         
                         
@@ -209,7 +210,7 @@
                 $('#error-card').hide();
                 $('.fiveday-tab').show();
                 $('#fiveday-card').show();
-                console.log(generic_data);
+                console.log("generic_data: "+generic_data);
                 
                 var div_forecast = document.getElementById('fiveday-tab');
                 //check if div_forecast contains any element
