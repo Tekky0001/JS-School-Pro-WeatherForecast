@@ -1,0 +1,360 @@
+<html>
+    <head>
+        <style>
+         
+        </style>
+        <link rel="stylesheet" href="style.css">
+        <script type="text/javascript" src="jquery-3.5.1.min.js"></script>
+        <script>
+            var generic_data;
+            var city = "Phnom Penh";
+            loadPage();
+            function searchCity(){
+                city = document.getElementById('input-city').value;
+                loadPage();
+            }
+            function loadPage(){
+            
+            $('.current-content').show();
+            $('.fiveday-forecast').hide();
+            
+            
+            $(document).ready(function(){
+                var lat;
+                var lon;
+                $.ajax({
+                    url:"https://api.openweathermap.org/data/2.5/weather?q="+city+
+                    "&appid=309765939ad941df4e500d86eb507f19&units=metric",
+                    type:"GET",
+                    dataType:"jsonp",
+                    success:function(data){
+                        var weather_status = data.weather[0].main;
+                        var temp = data.main.temp;
+                        var feels_like = data.main.feels_like;
+                        var sun_rise = data.sys.sunrise;
+                        var sun_set = data.sys.sunset;
+                        var duration = sun_set-sun_rise;
+                        lat = data.coord.lat;
+                        lon = data.coord.lon;
+                        console.log(data);
+                        getForecast();
+                        
+                        
+                    }
+                })
+                function getForecast(){
+                    $.ajax({
+                        url:"https://api.openweathermap.org/data/2.5/onecall?lat="+lat+
+                        "&lon="+lon+"&exclude=minutely&appid=309765939ad941df4e500d86eb507f19&units=metric",
+                        type:"GET",
+                        dataType:"jsonp",
+                        success:function(data){
+                            
+                            //console.log(data);
+                            runCurrentForecast(data); 
+                            AddContent(data,'hourly-tab');
+                            generic_data = data;
+                            return data;
+                        }
+                    })
+                }
+                
+            });
+            }
+            function runCurrentForecast(all_data){
+                    console.log(all_data);
+                    //Update Current Date
+                    var unix_time = all_data.current.dt;
+                    var current_date = new Date().toLocaleDateString("de-AT");
+                    var today = document.getElementById('today');
+                    today.innerHTML = current_date;
+                    //Weather Status
+                    var current_status = document.getElementById('current-text');
+                    current_status.innerHTML = all_data.current.weather[0].description;
+                    //Weather Icon
+                    var img = document.getElementById('current-icon');
+                    img.src = "http://openweathermap.org/img/wn/"+all_data.current.weather[0].icon+"@2x.png";
+                    //temp and real feel
+                    var temp = document.getElementById('temperature');
+                    temp.innerHTML = all_data.current.temp+"°C";
+                    var real_feel = document.getElementById('real-feel');
+                    real_feel.innerHTML = "Real Feel "+all_data.current.feels_like+"°C";
+                    //city name sunrise sunset duration
+                    var inputcity = document.getElementById('city');
+                    inputcity.innerText = city;
+                    var sunrise = document.getElementById('sunrise');
+                    var s_rise = new Date(all_data.current.sunrise*1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    sunrise.innerHTML = "Sunrise: "+s_rise;
+                    var sunset = document.getElementById('sunset');
+                    var s_set = new Date(all_data.current.sunset*1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    sunset.innerHTML = "Sunset: "+s_set
+                    var duration = document.getElementById('duration');
+                    var time = all_data.current.sunset*1000-all_data.current.sunrise*1000;
+                    hr = Math.floor(time/3600000);
+                    min = Math.round(time%3600000/60000);
+                    duration.innerHTML = "Duration: "+hr+":"+min+" hr";
+
+                }
+                function AddWindRow(data){
+                    tbl=document.getElementById('hourly-table');
+                    row=document.createElement("tr");
+                    col=document.createElement('td');
+                    col.innerText = "Wind(km/h)";
+                    row.appendChild(col);
+                    for(var i=0; i<7; i++){
+                        col=document.createElement('td');
+                        col.innerText=data.hourly[i].wind_speed;
+                        row.appendChild(col);
+                    }
+                    tbl.appendChild(row);
+                }
+                function AddRealFeelRow(data){
+                    tbl=document.getElementById('hourly-table');
+                    row=document.createElement("tr");
+                    col=document.createElement('td');
+                    col.innerText = "RealFeel";
+                    row.appendChild(col);
+                    for(var i=0; i<7; i++){
+                        col=document.createElement('td');
+                        col.innerText=data.hourly[i].feels_like;
+                        row.appendChild(col);
+                    }
+                    tbl.appendChild(row);
+                }
+                function AddTempRow(data){
+                    tbl=document.getElementById('hourly-table');
+                    row=document.createElement("tr");
+                    col=document.createElement('td');
+                    col.innerText = "Temp(°C)";
+                    row.appendChild(col);
+                    for(var i=0; i<7; i++){
+                        col=document.createElement('td');
+                        col.innerText=data.hourly[i].temp;
+                        row.appendChild(col);
+                    }
+                    tbl.appendChild(row);
+                }
+                function AddForecastRow(data){
+                    tbl=document.getElementById('hourly-table');
+                    row=document.createElement("tr");
+                    col=document.createElement('td');
+                    col.innerText = "Forecast";
+                    row.appendChild(col);
+                    for(var i=0; i<7; i++){
+                        col=document.createElement('td');
+                        col.innerText=data.hourly[i].weather[0].description;
+                        row.appendChild(col);
+                    }
+                    tbl.appendChild(row);
+                }
+                function AddIconRow(data){
+                    tbl = document.getElementById('hourly-table');
+                    row=document.createElement("tr");
+                    col=document.createElement('td');
+                    col.innerText = "";
+                    row.appendChild(col);
+                    for(var i=0; i<7; i++){
+                        col=document.createElement('td');
+                        img=document.createElement('img');
+                        img.src = "http://openweathermap.org/img/wn/"+data.hourly[i].weather[0].icon+"@2x.png";
+                        col.appendChild(img);
+                        row.appendChild(col);
+                    }
+                    tbl.appendChild(row);
+                }
+                function AddHeadingRow(data){
+                    tbl=document.getElementById('hourly-table');
+                    row=document.createElement("tr");
+                    h_col=document.createElement('th');
+                    h_col.innerText = "TODAY";
+                    row.appendChild(h_col);
+                    for(var i=0; i<7;i++){
+                        col=document.createElement('th');
+                        var time = new Date(data.hourly[i].dt*1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }.toString());
+                        col.innerText= time.substr(0,time.lastIndexOf(":00:"))+time.substr(time.length-3,time.length-1);
+                        row.appendChild(col);
+                    }
+                    tbl.appendChild(row);
+                }
+                function addTable(divID){
+                    //check if the element is existed;
+                    var element = document.getElementById('hourly-table');
+                    if (typeof(element) != 'undefined' && element != null){
+                        element.remove();
+                    }
+                    var divParent = document.getElementById(divID);
+                    var tbl = document.createElement('table');
+                    tbl.id = "hourly-table";
+                    divParent.appendChild(tbl);
+                }
+                function AddContent(data,divID){
+                    addTable(divID);
+                    AddHeadingRow(data);
+                    AddIconRow(data);
+                    AddForecastRow(data);
+                    AddTempRow(data);
+                    AddRealFeelRow(data);
+                    AddWindRow(data);
+                    
+                }
+            function fivedayForecast(){
+                /*
+                document.getElementById('id_current').style.position = "absolute";
+                document.getElementById('id_hourly').style.position = "absolute";
+                document.getElementById('id_current').style.visibility = "hidden";
+                document.getElementById('id_hourly').style.visibility = "hidden";
+                */
+                $('.fiveday-forecast').show();
+                $('.current-content').hide();
+                $('#error-card').hide();
+                $('.fiveday-tab').show();
+                $('#fiveday-card').show();
+                console.log(generic_data);
+                
+                var div_forecast = document.getElementById('fiveday-tab');
+                //check if div_forecast contains any element
+                if (div_forecast.innerHTML!=''){
+                    div_forecast.innerHTML='';
+                }
+                for(var i = 0; i<5; i++){
+                    createFiveDayDOM(generic_data,i);
+                    var div_fiveday_card = document.getElementById('fiveday-card');
+                    
+                    //avoiding creating duplicated div fiveday-card
+                    if(i==0 && div_fiveday_card==null){
+                        
+                        var divParent = document.querySelector('.fiveday-forecast');
+                        var div = document.createElement('div');
+                        div.id = "fiveday-card";
+                        div.className = "card-tab";
+                        div.addEventListener('click',function(){AddContent(generic_data,'fiveday-card');});
+                        divParent.appendChild(div);
+                        var divFdCard = document.querySelector('#fiveday-card');
+                        var hourly_title = document.createElement('span');
+                        hourly_title.className = 'title-text';
+                        hourly_title.innerText = "Hourly";
+                        divFdCard.appendChild(hourly_title);
+                        var city_title = document.createElement('span');
+                        city_title.id = 'city-name';
+                        city_title.innerText = "City: "+city;
+                        divFdCard.appendChild(city_title);
+                        AddContent(generic_data,'fiveday-card');       
+                    }
+                    else if(i==0 && div_fiveday_card!=null){
+                        AddContent(generic_data,'fiveday-card');
+                    }
+                }
+               
+            }
+            function createFiveDayDOM(data,i){
+
+                var div_forecast = document.querySelector('.fiveday-tab');
+                var div_card = document.createElement('div');
+                div_card.className = "card-tab card-tab-five";
+                if(i!=0){
+                    div_card.addEventListener('click',function(){showHourlyForecast();});
+                }
+                else{
+                    //div_card.className = "card-tab card-tab-five active";
+                }
+                var span_title = document.createElement('span');
+                span_title.className = "title-text";
+                var options = {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                };
+                var date = new Date(data.daily[i].dt*1000).toLocaleDateString("en",options).toString();
+                console.log(date);
+                span_title.innerText = date.substr(0,3);
+                span_title.innerHTML += "</br>";
+                var span_date = document.createElement('span');
+                span_date.className = "date";
+                span_date.innerText = date.substring(5,10);
+                span_date.innerHTML += "</br>";
+                var img_icon = document.createElement('img');
+                img_icon.src = "http://openweathermap.org/img/wn/"+data.daily[i].weather[0].icon+"@2x.png";
+                
+                var span_temp = document.createElement('span');
+                span_temp.className = "temp";
+                span_temp.innerText = data.daily[i].temp.day+"°C";
+                span_temp.innerHTML += "</br>";
+                var span_status = document.createElement('span');
+                span_status.className = "status";
+                span_status.innerText = data.daily[i].weather[0].description;
+                
+                div_card.appendChild(span_title);
+                div_card.appendChild(span_date);
+                div_card.appendChild(img_icon);
+                div_card.appendChild(document.createElement('br'));
+                div_card.appendChild(span_temp);
+                div_card.appendChild(span_status);
+                div_forecast.appendChild(div_card);
+           
+            }
+    
+            function showHourlyForecast(){
+                console.log('click');
+                $('.fiveday-tab').hide();
+                $('#fiveday-card').hide();
+                if(document.getElementById('error-card')!=null){
+                    document.getElementById('error-card').remove();
+                }
+                var divParent = document.querySelector('.fiveday-forecast');
+                //show error page 404;
+                var divCard = document.createElement('div');
+                divCard.className = 'card-tab';
+                divCard.id = 'error-card';
+                divCard.innerHTML += "<p id='err-title'>Error 404</<p>";
+                divCard.innerHTML += "<p>This Error happens due to a bad request of api. Only full subscription member"+ 
+                    "can use this specific api call to request 4 days further weather forecast, since it is a free member"+
+                    " subscription, it allows to access a limited resource only. That is why current day weather prediction is shown.</p>";
+                divParent.appendChild(divCard);
+            }
+        </script>
+    </head>
+    <body>
+        <div class="container-page">
+            <div class="header">
+                <h2 id="heading-text">MY WEATHER</h2>
+                <input type="image" src="search-icon.png" class="search-icon" onclick="searchCity()">
+                <input id="input-city" class="search-input" type="text" placeholder="city name..." name="search" >
+            </div>
+            <div class="nav-bar">
+                <span class="panel-tab today-span" onclick="loadPage()">Today</span>
+                <span class="panel-tab fiveday-span" onclick="fivedayForecast()">5-day forecast</span>
+            </div>
+            <div class="body-content">
+                <div id="today-tab" class="current-content">
+                    <div class="card-tab ">
+                        <span class="title-text">CURRENT WEATHER</span>
+                        <span id="today"></span><br/>
+                        <div class="current-block">
+                            <img id="current-icon" src="sun-icon.png" ><br/>
+                            <span id="current-text"></span>
+                        </div>
+                        <div class="current-block">
+                            <span id="temperature"></span><br/>
+                            <span id="real-feel">Real Feel</span>
+                        </div>
+                        <div class="current-block">
+                            <span id="city"></span><br>
+                            <span id="sunrise"> </span><br/>
+                            <span id="sunset"></span><br/>
+                            <span id="duration"> </span>
+                        </div>
+                    </div>
+                    <div class="card-tab " id="hourly-tab">
+                        <span class="title-text">HOURLY</span>  
+                    </div>
+                    
+                </div>
+                <div class="fiveday-forecast">
+                    <div class="fiveday-tab" id="fiveday-tab"></div>
+                    
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
